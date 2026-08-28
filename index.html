@@ -311,6 +311,51 @@
             padding: 10px;
             cursor: pointer;
         }
+        #disclaim {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 10, .92);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+        }
+        #disclaim .dBox {
+            background: #12161f;
+            border: 1px solid #5b6472;
+            padding: 26px 24px;
+            width: min(440px, 92vw);
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 0, 0, .6);
+        }
+        #disclaim .dTitle {
+            color: #e8b34b;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            letter-spacing: 4px;
+        }
+        #disclaim .dBody {
+            color: #9aa7bd;
+            font-size: 13px;
+            line-height: 1.9;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        #disclaim .dBody b {
+            color: #e8edf4;
+        }
+        #disclaim button {
+            width: 100%;
+            background: #2a3245;
+            border: 1px solid #39d98a;
+            color: #39d98a;
+            font: inherit;
+            font-size: 14px;
+            padding: 12px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -342,6 +387,17 @@
                 <div class="idCap">请输入你的ID：</div>
                 <input id="idInput" maxlength="12" placeholder="输入你的ID" autocomplete="off">
                 <button id="idOk">确认</button>
+            </div>
+        </div>
+        <div id="disclaim">
+            <div class="dBox">
+                <div class="dTitle">⚠️ 免责声明</div>
+                <div class="dBody">
+                    本游戏的<b>玩法创意</b>与<b>背景音乐（BGM）</b>均来源于游戏《恶魔轮盘》（Buckshot Roulette）。<br><br>
+                    本作为粉丝向同人整活作品，不含任何商业用途；相关版权归原开发者所有。<br>
+                    如涉及侵权，请联系删除。
+                </div>
+                <button id="disOk">同意并开始</button>
             </div>
         </div>
     </div>
@@ -407,7 +463,8 @@
             audioEl.play().catch(() => {});
         }
         function unlockAudio() {
-            if (curMusic) playMusic(curMusic);
+            if (!curMusic) return;
+            playMusic(curMusic);
             document.removeEventListener("pointerdown", unlockAudio);
             document.removeEventListener("keydown", unlockAudio);
         }
@@ -930,9 +987,12 @@
             }
         });
 
-        addMsg("—— 银河轮盘 ——", "warn");
-        renderHUD();
-        speak(T.intro(), () => newStage());
+        $("disOk").onclick = () => {
+            $("disclaim").style.display = "none";
+            addMsg("—— 银河轮盘 ——", "warn");
+            renderHUD();
+            speak(T.intro(), () => newStage());
+        };
     </script>
 </body>
 </html>
