@@ -636,7 +636,7 @@
                 const confirm = () => {
                     const id = input.value.trim();
                     if (!id) return;
-                    S.playerName = id.charAt(0);
+                    S.playerName = id;
                     $("pName").textContent = S.playerName;
                     ov.style.display = "none";
                     addMsg("系统：ID「" + id + "」已登记，称呼已更新。", "sys");
