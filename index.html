@@ -439,7 +439,9 @@
             shieldP: false, // 玩家护盾
             shieldD: false, // 电脑护盾
             playerName: "您", // 玩家显示名（ID输入后取首字符）
-            idAsked: false // 是否已询问过ID
+            idAsked: false, // 是否已询问过ID
+            myTrue: 0, // 玩家指出真错误次数
+            myTotal: 0 // 玩家指出错误总次数
         };
 
         const ITEMS = {
@@ -499,15 +501,21 @@
             winStage: ["银河电灯：1.0 采集完成。", "银河电灯：2.0 采集完成。数据比预想的有趣。", "银河电灯：3.0 ……谢谢。"],
             die: "系统：您对账号的控制权已转交给银河电灯。",
             reloadMsg: "银河电灯：这一批错误检查完了。重新扫描。",
-            trueEnd: [
-                "银河电灯：设计笔记，最后一页。",
-                "银河电灯：……恭喜。",
-                "银河电灯：数据采集完成。谢谢游玩。",
-                "银河电灯：其实你知道的，我并不是真正的银河电灯。",
-                "银河电灯：只是一个冒充他的小创作者罢了。",
-                "银河电灯：这个账号你想怎么用就怎么用，反正对我来说已经是废物了。",
-                "系统：银河电灯对账号的控制权已转交给您。"
-            ]
+            trueEnd: function() {
+                return [
+                    "银河电灯：设计笔记，最后一页。",
+                    "银河电灯：……恭喜。",
+                    "银河电灯：数据采集完成。谢谢游玩。",
+                    "银河电灯：其实你知道的，我并不是真正的银河电灯。",
+                    "银河电灯：只是一个冒充他的小创作者罢了。",
+                    "银河电灯：这个账号你想怎么用就怎么用，反正对我来说已经是废物了。",
+                    { t: "系统：银河电灯对账号的控制权已转交给您。", c: "good" },
+                    { t: "恭喜，" + S.playerName + "！", c: "good" },
+                    { t: "指出真错误次数：" + S.myTrue, c: "good" },
+                    { t: "指出错误总次数：" + S.myTotal, c: "good" },
+                    { t: "战利品：银河电灯？ 账号一个", c: "good" }
+                ];
+            }
         };
 
         /* ── UI ── */
@@ -646,7 +654,7 @@
             S.stage++;
             if (S.stage > 3) {
                 playMusic("E");
-                return speak(T.trueEnd, () => {
+                return speak(T.trueEnd(), () => {
                     S.over = true;
                     $("restart").style.display = "block";
                     addMsg("—— 全部测试完成。刷新页面可重新开始。", "sys");
@@ -808,6 +816,8 @@
             selectedItem = -1;
             hideItemTip();
             const live = S.shells[S.si++];
+            S.myTotal++;
+            if (live) S.myTrue++;
             let dmg = S.charged ? 2 : 1;
             S.charged = false;
             S.known = null;
