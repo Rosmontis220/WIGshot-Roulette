@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <title>银河轮盘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        body {
+            background: #0b0d10;
+            color: #c8d0dc;
+            font-family: Consolas, "Microsoft YaHei", monospace;
+            height: 100vh;
+            height: 100dvh;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #app {
+            width: 100%;
+            max-width: 720px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #top {
+            background: #11141a;
+            padding: 10px 14px;
+            border-bottom: 1px solid #1e2430;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        #top .av {
+            font-size: 28px;
+        }
+        #top .nm {
+            font-size: 15px;
+            color: #e8edf4;
+        }
+        #top .st {
+            font-size: 12px;
+            color: #5b6472;
+            margin-top: 2px;
+        }
+        #stage {
+            margin-left: auto;
+            text-align: right;
+            font-size: 12px;
+            color: #5b6472;
+        }
+        #stage b {
+            color: #7fd4ff;
+            font-weight: normal;
+        }
+        #log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .msg {
+            max-width: 86%;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        .msg .av {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .msg .bd {
+            background: #151a23;
+            border: 1px solid #1e2430;
+            border-radius: 4px 12px 12px 12px;
+            padding: 8px 12px;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        .msg.me {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .msg.me .bd {
+            background: #12281c;
+            border-color: #1f3d2c;
+            border-radius: 12px 4px 12px 12px;
+        }
+        .sys {
+            text-align: center;
+            font-size: 12px;
+            color: #5b6472;
+            padding: 4px 0;
+        }
+        .sys.warn {
+            color: #e8b34b;
+        }
+        .sys.bad {
+            color: #e86a6a;
+        }
+        .sys.good {
+            color: #39d98a;
+        }
+        .typing .bd::after {
+            content: "▌";
+            animation: bl .6s infinite;
+        }
+        @keyframes bl {
+            50% {
+                opacity: 0;
+            }
+        }
+        #log.shake {
+            animation: sh .3s;
+        }
+        @keyframes sh {
+            25% {
+                transform: translateX(-6px);
+            }
+            75% {
+                transform: translateX(6px);
+            }
+        }
+        #hud {
+            background: #0e1117;
+            border-top: 1px solid #1e2430;
+            padding: 8px 12px;
+            flex-shrink: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+            font-size: 13px;
+            align-items: center;
+            min-height: 34px;
+        }
+        #hud .lbl {
+            color: #5b6472;
+            font-size: 11px;
+            margin-right: 4px;
+        }
+        #known {
+            color: #7fd4ff;
+        }
+        .dmg2 {
+            color: #e86a6a;
+        }
+        #items {
+            display: flex;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #0e1117;
+            flex-shrink: 0;
+            min-height: 46px;
+            flex-wrap: wrap;
+        }
+        .it {
+            font-size: 22px;
+            background: #151a23;
+            border: 1px solid #2a3040;
+            border-radius: 6px;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: .15s;
+        }
+        .it:hover {
+            border-color: #39d98a;
+            transform: translateY(-2px);
+        }
+        .it.used {
+            opacity: .25;
+            pointer-events: none;
+        }
+        .it.sel {
+            border-color: #39d98a;
+            box-shadow: 0 0 10px #39d98a55;
+            transform: translateY(-2px);
+        }
+        .it.banned {
+            opacity: .35;
+            border-color: #e86a6a;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        #itemTip {
+            position: fixed;
+            left: 50%;
+            bottom: 118px;
+            transform: translateX(-50%);
+            background: #12161f;
+            border: 1px solid #39d98a;
+            padding: 9px 14px;
+            font-size: 12px;
+            color: #e8edf4;
+            max-width: 86vw;
+            text-align: center;
+            z-index: 60;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,.5);
+        }
+        #acts {
+            display: flex;
+            gap: 8px;
+            padding: 0 12px 12px;
+            background: #0e1117;
+            flex-shrink: 0;
+        }
+        button.act {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: .15s;
+        }
+        #bSelf {
+            background: #1a2030;
+            color: #c8d0dc;
+            border: 1px solid #2a3040;
+        }
+        #bSelf:hover {
+            border-color: #7fd4ff;
+        }
+        #bFish {
+            background: #1f1518;
+            color: #e8a0a0;
+            border: 1px solid #3a2028;
+        }
+        #bFish:hover {
+            border-color: #e86a6a;
+        }
+        button.act:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        #restart {
+            background: none;
+            border: 1px dashed #2a3040;
+            color: #5b6472;
+            margin-top: 8px;
+            flex: none;
+            padding: 13px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="top">
+            <div class="av" id="dav">💡</div>
+            <div><div class="nm">银河电灯</div><div class="st" id="dsub">WIG制作者 · 在线</div></div>
+            <div id="stage">阶段 <b id="stg">-</b>/3<br><span id="stgnm"></span></div>
+        </div>
+
+        <div id="log"></div>
+
+        <div id="hud">
+            <span><span class="lbl">您</span><span id="pHP"></span></span>
+            <span><span class="lbl">灯</span><span id="dHP"></span></span>
+            <span><span class="lbl">总错误数</span><span id="chamber"></span></span>
+            <span id="known"></span>
+            <span id="buff"></span>
+        </div>
+        <div id="items"></div>
+        <div id="itemTip"></div>
+        <div id="acts">
+            <button class="act" id="bSelf">🔫 寻找自己WIG的错误</button>
+            <button class="act" id="bFish">🔫 寻找银河电灯WIG的错误</button>
+            <button class="act" id="restart" style="display:none">重新接入测试</button>
+        </div>
+    </div>
+
+    <script>
+        "use strict";
+        // 控制台彩蛋
+        console.log("恭喜你发现了隐藏彩蛋！这是终极密码：NjIzNzY4MTU3");
+
+        const $ = id => document.getElementById(id);
+        const log = $("log");
+        const R = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+        const pick = a => a[R(0, a.length - 1)];
+
+        // 游戏状态，每次刷新全新开始
+        const S = {
+            stage: 0,
+            pHP: 0,
+            dHP: 0,
+            pMax: 0,
+            dMax: 0,
+            shells: [],
+            si: 0,
+            known: null,
+            turn: "p",
+            busy: true,
+            pItems: [],
+            dItems: [],
+            over: false,
+            wins: 0,
+            charged: false, // 加电标记
+            cuff: false, // 禁言标记（对方跳过）
+            shieldP: false, // 玩家护盾
+            shieldD: false // 电脑护盾
+        };
+
+        const ITEMS = {
+            lens: { e: "🔎", n: "内测资格", d: "查看下一处。仅此一次。" },
+            cookie: { e: "🍪", n: "玩家反馈", d: "回复1点生命。" },
+            trash: { e: "🗑️", n: "撤回发布", d: "退出当前一处。" },
+            volt: { e: "⚡", n: "加电", d: "下一处错误伤害×2。" },
+            mute: { e: "📵", n: "置顶禁言", d: "对方跳过一回合。" },
+            clip: { e: "🧷", n: "旧存档", d: "50%回复2点，50%失去1点。" },
+            buf: { e: "🪞", n: "缓冲页", d: "免疫下一次伤害。" },
+            link: { e: "📎", n: "更新公告", d: "查看下一处。公告内容可能有意外。" }
+        };
+        const POOL = ["lens", "cookie", "trash", "volt", "mute", "clip", "buf", "link"];
+        const isHealItem = k => k === "cookie" || k === "clip";
+
+        /* ── 音乐 ── */
+        const MUSIC = { 1: "1.mp3", 2: "2.mp3", 3: "3.mp3", E: "E.mp3", BE: "BE.mp3" };
+        let curMusic = null;
+        let audioEl = null;
+        function playMusic(key) {
+            if (!MUSIC[key]) return;
+            curMusic = key;
+            if (!audioEl) audioEl = new Audio();
+            audioEl.src = MUSIC[key];
+            audioEl.loop = (key !== "E" && key !== "BE");
+            audioEl.volume = .5;
+            audioEl.play().catch(() => {});
+        }
+        function unlockAudio() {
+            if (curMusic) playMusic(curMusic);
+            document.removeEventListener("pointerdown", unlockAudio);
+            document.removeEventListener("keydown", unlockAudio);
+        }
+
+        // 对话
+        const T = {
+            intro: function() {
+                return [
+                    "您已加入群聊「深夜测试房」。群成员：2。",
+                    "银河电灯：欢迎。请坐。规则很简单：WIG里藏着几处错误，轮流检查。",
+                    "银河电灯：检查自己的WIG是刻意为之，您继续；否则交换回合。",
+                    "银河电灯：谁的生命先归零，谁就成为下一款WIG的素材。这不是威胁，是排期。",
+                    "银河电灯：那么，开始吧。"
+                ];
+            },
+            load: (n, live) => "系统：扫描完成 —— 总错误数 " + n + "（🟢真实错误×" + live + " / ⚪刻意为之×" + (n - live) + "），顺序未知",
+            stage: s => ["", "📦 测试用例 1.0：基础规则。", "📦📦 测试用例 2.0：附加变量。", "📦📦📦 测试用例 3.0（未发布）：请勿参考任何来自制作方的信息。"][s],
+            pShoot: (self, live, dmg) => {
+                if (!live) return self ? "⚪ 刻意为之。您检查了自己的WIG，一切正常。" : "⚪ 刻意为之。银河电灯的WIG没事。";
+                return self ? "🟢 真实错误——就在您自己的WIG里。（-" + dmg + "）" : "🟢 真实错误——银河电灯的WIG当场翻车。（-" + dmg + "）";
+            },
+            dShoot: (self, live, dmg) => {
+                if (!live) return self ? "银河电灯检查自己的WIG：⚪ 刻意为之。" : "银河电灯检查您的WIG：⚪ 刻意为之。";
+                return self ? "银河电灯检查自己的WIG：🟢 真实错误……她似乎早就知道。" : "银河电灯检查您的WIG：🟢 真实错误。（-" + dmg + "）";
+            },
+            winStage: ["银河电灯：1.0 采集完成。", "银河电灯：2.0 采集完成。数据比预想的有趣。", "银河电灯：3.0 ……谢谢。"],
+            die: "系统：您已被移出群聊。",
+            reloadMsg: "银河电灯：这一批错误检查完了。重新扫描。",
+            trueEnd: [
+                "银河电灯：设计笔记，最后一页。",
+                "银河电灯：轮盘测试的是玩家在信息不完全时的决策。但我真正想测的是——",
+                "银河电灯：会不会有人陪一个停更的制作者，玩到第三局。",
+                "银河电灯：数据采集完成。谢谢游玩。",
+                "银河电灯：这不是谜题。",
+                "系统：您已获得徽章【3.0（未发布）】"
+            ]
+        };
+
+        /* ── UI ── */
+        function addMsg(html, who) {
+            const div = document.createElement("div");
+            if (who === "sys") {
+                div.className = "sys" + (html && html.c ? " " + html.c : "");
+                div.textContent = typeof html === "string" ? html : (html.t || "");
+            } else {
+                div.className = "msg" + (who === "me" ? " me" : "");
+                div.innerHTML = '<div class="av">' + (who === "me" ? "🧑‍💻" : "💡") + '</div><div class="bd"></div>';
+                div.querySelector(".bd").textContent = html;
+            }
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+            return div;
+        }
+
+        function speak(lines, cb) {
+            S.busy = true;
+            lockUI();
+            let i = 0;
+            const next = () => {
+                if (i >= lines.length) { S.busy = false; cb && cb(); return; }
+                const t = lines[i++];
+                if (typeof t === "object") { addMsg(t, "sys"); next(); return; }
+                const div = addMsg("", "d");
+                div.classList.add("typing");
+                const bd = div.querySelector(".bd");
+                bd.textContent = "";
+                let j = 0;
+                const tick = setInterval(() => {
+                    bd.textContent = t.slice(0, ++j);
+                    log.scrollTop = log.scrollHeight;
+                    if (j >= t.length) { clearInterval(tick); div.classList.remove("typing"); setTimeout(next, 280); }
+                }, 26);
+            };
+            next();
+        }
+        // 点击对话不再加速
+
+        function lockUI() {
+            selectedItem = -1;
+            hideItemTip();
+            $("bSelf").disabled = true;
+            $("bFish").disabled = true;
+            document.querySelectorAll(".it").forEach(b => b.classList.add("used"));
+        }
+
+        function unlockUI() {
+            renderHUD();
+            renderItems();
+            if (S.over || S.turn !== "p") return;
+            $("bSelf").disabled = false;
+            $("bFish").disabled = false;
+            document.querySelectorAll(".it").forEach((b, i) => { if (S.pItems[i]) b.classList.remove("used"); });
+        }
+
+        function renderHUD() {
+            $("pHP").textContent = "❤️".repeat(Math.max(0, S.pHP)) + "🖤".repeat(Math.max(0, S.pMax - S.pHP));
+            $("dHP").textContent = "💡".repeat(Math.max(0, S.dHP)) + "○".repeat(Math.max(0, S.dMax - S.dHP));
+            const rem = S.shells.slice(S.si);
+            $("chamber").textContent = rem.length ? rem.map(() => "？").join(" ") + "（剩余" + rem.length + "处）" : "—";
+            $("known").textContent = S.known !== null && S.known !== undefined ? "下一处：" + (S.known ? "🟢真实错误" : "⚪刻意为之") : "";
+            $("buff").innerHTML = (S.charged ? '<span class="dmg2">⚡加电中</span>' : "") +
+                (S.shieldP ? " 🪞您有缓冲" : "") + (S.cuff ? " 📵灯被禁言" : "");
+        }
+
+        let selectedItem = -1;
+        function showItemTip(it) {
+            const t = $("itemTip");
+            t.innerHTML = "<b style='color:#39d98a'>" + it.n + "</b><br>" + it.d;
+            t.style.display = "block";
+        }
+        function hideItemTip() {
+            $("itemTip").style.display = "none";
+        }
+        function renderItems() {
+            const box = $("items");
+            box.innerHTML = "";
+            S.pItems.forEach((k, i) => {
+                if (!k) return;
+                const b = document.createElement("div");
+                const banned = S.stage === 3 && S.pHP <= 1 && isHealItem(k);
+                b.className = "it" + (S.turn === "p" && !S.busy ? "" : " used") + (selectedItem === i ? " sel" : "") + (banned ? " banned" : "");
+                b.textContent = ITEMS[k].e;
+                b.title = ITEMS[k].n + "：" + ITEMS[k].d;
+                b.onclick = e => {
+                    e.stopPropagation();
+                    if (S.busy || S.turn !== "p" || S.over) return;
+                    if (banned) return;
+                    if (selectedItem === i) {
+                        selectedItem = -1;
+                        hideItemTip();
+                        useItem(i);
+                    } else {
+                        selectedItem = i;
+                        showItemTip(ITEMS[k]);
+                        renderItems();
+                    }
+                };
+                box.appendChild(b);
+            });
+        }
+
+        function shake() { log.classList.remove("shake"); void log.offsetWidth; log.classList.add("shake"); }
+
+        /* ── 核心逻辑 ── */
+
+        // 每个弹匣额外补充的道具数量
+        function getAddItemCount() {
+            if (S.stage === 2) return 2;
+            if (S.stage === 3) return 3;
+            return 0;
+        }
+
+        // 在现有基础上额外补充道具（上限8）
+        function refillItems() {
+            const addCount = getAddItemCount();
+            // 玩家
+            let cur = S.pItems.filter(Boolean).length;
+            let add = Math.min(addCount, 8 - cur);
+            for (let i = 0; i < add; i++) {
+                S.pItems.push(pick(POOL));
+            }
+            // 电脑
+            cur = S.dItems.filter(Boolean).length;
+            add = Math.min(addCount, 8 - cur);
+            for (let i = 0; i < add; i++) {
+                S.dItems.push(pick(POOL));
+            }
+        }
+
+        function newStage() {
+            S.stage++;
+            if (S.stage > 3) {
+                playMusic("E");
+                return speak(T.trueEnd, () => {
+                    S.over = true;
+                    $("restart").style.display = "block";
+                    addMsg("—— 全部测试完成。刷新页面可重新开始。", "sys");
+                });
+            }
+            playMusic(S.stage);
+            $("stg").textContent = S.stage;
+            $("stgnm").textContent = ["", "1.0", "2.0", "3.0"][S.stage];
+
+            // 清空道具（转阶段清空）
+            S.pItems = [];
+            S.dItems = [];
+            // 重置状态
+            S.charged = false;
+            S.cuff = false;
+            S.shieldP = false;
+            S.shieldD = false;
+            S.known = null;
+            S._cuffP = false;
+            S._dKnown = null;
+
+            // 血量随机 2~6，双方相等
+            const hp = R(2, 6);
+            S.pMax = hp;
+            S.dMax = hp;
+            S.pHP = hp;
+            S.dHP = hp;
+
+            renderHUD();
+            speak([T.stage(S.stage)], loadShells);
+        }
+
+        function loadShells() {
+            const n = R(4, 8);
+            const live = R(1, n - 1);
+            const arr = Array(n).fill(0);
+            for (let i = 0; i < live; i++) arr[i] = 1;
+            // 洗牌
+            for (let i = n - 1; i > 0; i--) { const j = R(0, i); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+            S.shells = arr;
+            S.si = 0;
+            S.known = null;
+
+            // 补充道具（保留已有，额外加发）
+            refillItems();
+
+            addMsg(T.load(n, live), "sys");
+            const giveTurn = () => {
+                // 若玩家被禁言，重新扫描后由电脑先手
+                if (S._cuffP) {
+                    S._cuffP = false;
+                    addMsg("您被禁言，跳过回合。", "warn");
+                    S.turn = "d";
+                    renderHUD();
+                    setTimeout(dealerTurn, 600);
+                } else {
+                    S.turn = "p";
+                    unlockUI();
+                }
+            };
+            giveTurn();
+        }
+
+        function shellsEmpty() { return S.si >= S.shells.length; }
+
+        function useItem(i) {
+            if (S.busy || S.turn !== "p" || S.over) return;
+            const k = S.pItems[i];
+            if (!k) return;
+            if (S.stage === 3 && S.pHP <= 1 && isHealItem(k)) {
+                addMsg("三阶段血量见底，回血道具被禁用。", "warn");
+                return;
+            }
+            S.pItems[i] = null;
+            switch (k) {
+                case "lens":
+                    S.known = S.shells[S.si];
+                    addMsg("🔎 内测资格：下一处是 " + (S.known ? "🟢真实错误" : "⚪刻意为之"), "sys");
+                    break;
+                case "cookie":
+                    S.pHP = Math.min(S.pMax, S.pHP + 1);
+                    addMsg("🍪 使用玩家反馈，回复1点", "sys");
+                    break;
+                case "trash": {
+                    const gone = S.shells[S.si++];
+                    S.known = null;
+                    addMsg("🗑️ 撤回发布：跳过了一处——" + (gone ? "🟢那处是真实错误" : "⚪那处是刻意为之"), "sys");
+                    break;
+                }
+                case "volt":
+                    S.charged = true;
+                    addMsg("⚡ 加电：下一处错误伤害×2", "warn");
+                    break;
+                case "mute":
+                    S.cuff = true;
+                    addMsg("📵 置顶禁言：对方跳过一回合", "good");
+                    break;
+                case "clip":
+                    if (Math.random() < .5) { S.pHP = Math.min(S.pMax, S.pHP + 2); addMsg("🧷 旧存档读取成功：回复2点", "good"); } else { S.pHP--; addMsg("🧷 旧存档损坏：失去1点", "bad"); }
+                    break;
+                case "buf":
+                    S.shieldP = true;
+                    addMsg("🪞 缓冲页展开", "sys");
+                    break;
+                case "link":
+                    if (Math.random() < .2) { S.si++; S.known = null; addMsg("📎 点开公告：加载失败，跳过了一处。", "warn"); } else { S.known = S.shells[S.si]; addMsg("📎 公告附件：下一处是 " + (S.known ? "🟢真实错误" : "⚪刻意为之"), "sys"); }
+                    break;
+            }
+            renderHUD();
+            renderItems();
+            if (S.pHP <= 0 || S.dHP <= 0) { checkDead(); return; }
+            if (shellsEmpty()) { speak([T.reloadMsg], loadShells); return; }
+            // 使用道具后继续当前回合
+        }
+
+        /* 检查错误 */
+        function shoot(target) {
+            if (S.busy || S.turn !== "p" || S.over) return;
+            if (shellsEmpty()) { speak([T.reloadMsg], loadShells); return; }
+            selectedItem = -1;
+            hideItemTip();
+            const live = S.shells[S.si++];
+            let dmg = S.charged ? 2 : 1;
+            S.charged = false;
+            S.known = null;
+            shake();
+            let keepTurn = false;
+
+            if (target === "p") {
+                if (live) {
+                    if (S.shieldP) { S.shieldP = false; addMsg("🪞 缓冲页吸收了伤害", "sys"); }
+                    else { S.pHP -= dmg; addMsg(T.pShoot(true, true, dmg), "bad"); }
+                } else {
+                    addMsg(T.pShoot(true, false), "sys");
+                    keepTurn = true;
+                }
+            } else {
+                if (live) {
+                    if (S.shieldD) { S.shieldD = false; addMsg("银河电灯：缓冲。", "sys"); }
+                    else { S.dHP -= dmg; addMsg(T.pShoot(false, true, dmg), "good"); }
+                } else {
+                    addMsg(T.pShoot(false, false), "sys");
+                }
+            }
+
+            renderHUD();
+            if (S.pHP <= 0 || S.dHP <= 0) return checkDead();
+            if (shellsEmpty()) { S.turn = "p"; return speak([T.reloadMsg], loadShells); } // 玩家先手
+            if (keepTurn) return unlockUI();
+
+            S.turn = "d";
+            renderHUD();
+            setTimeout(dealerTurn, 600);
+        }
+
+        function stageClear() {
+            S.wins = (S.wins || 0) + 1;
+            const lines = [T.winStage[S.stage - 1], "系统：测试用例 " + ["", "1.0", "2.0", "3.0"][S.stage] + " 通过。"];
+            speak(lines, newStage); // newStage 会清空道具并进入下一阶段
+        }
+
+        function checkDead() {
+            if (S.dHP <= 0) return stageClear();
+            if (S.pHP > 0) return;
+            playMusic("BE");
+            S.over = true;
+            S.turn = "d";
+            speak([
+                "银河电灯：第" + R(1, 9) + "回合，您在" + pick(["只剩一处刻意为之", "血量见底", "没有任何道具"]) + "的情况下做出了那个选择。我把这段记进设计笔记了。",
+                { t: T.die, c: "bad" }
+            ], () => { $("restart").style.display = "block"; });
+        }
+
+        /* ── 电脑 AI ── */
+        function dealerTurn() {
+            if (S.over || S.turn !== "d") return;
+
+            const step = () => {
+                if (S.over) return;
+                if (shellsEmpty()) { speak([T.reloadMsg], loadShells); return; }
+                if (S.cuff) { S.cuff = false; addMsg("📵 银河电灯被禁言，跳过回合", "sys"); return endD(); }
+
+                // 电脑使用道具（随机）
+                if (S.dItems.length > 0 && Math.random() < 0.6) {
+                    const idx = R(0, S.dItems.length - 1);
+                    const k = S.dItems[idx];
+                    S.dItems.splice(idx, 1);
+                    if (S.stage === 3 && S.dHP <= 1 && isHealItem(k)) {
+                        addMsg("三阶段血量见底，银河电灯的" + ITEMS[k].n + "失效了。", "warn");
+                        return setTimeout(step, 700);
+                    }
+                    switch (k) {
+                        case "lens":
+                            // 电脑预知：只写内部变量，不泄露给玩家
+                            S._dKnown = S.shells[S.si];
+                            addMsg("银河电灯使用了🔎。她知道了什么。", "warn");
+                            return setTimeout(step, 700);
+                        case "cookie":
+                            if (S.dHP < S.dMax) { S.dHP++; addMsg("银河电灯使用了🍪。", "sys"); }
+                            return setTimeout(step, 700);
+                        case "trash":
+                            S.si++;
+                            S.known = null;
+                            S._dKnown = null;
+                            addMsg("银河电灯撤掉了一处。", "warn");
+                            if (shellsEmpty()) return speak([T.reloadMsg], loadShells);
+                            return setTimeout(step, 700);
+                        case "volt":
+                            S.charged = true;
+                            addMsg("银河电灯使用了⚡。", "bad");
+                            return setTimeout(step, 700);
+                        case "mute":
+                            // 禁言玩家，但由电脑使用，效果是玩家下一回合跳过，但我们在玩家回合处理
+                            // 我们设置一个cuffP标记
+                            S._cuffP = true;
+                            addMsg("📵 银河电灯使用了禁言，您下回合跳过。", "warn");
+                            return setTimeout(step, 700);
+                        case "clip":
+                            if (Math.random() < .5) { S.dHP = Math.min(S.dMax, S.dHP + 2); addMsg("银河电灯读取旧存档：回复2点", "sys"); } else { S.dHP--; addMsg("银河电灯读取旧存档：失败，失去1点", "good"); }
+                            if (S.dHP <= 0) return checkDead();
+                            return setTimeout(step, 700);
+                        case "buf":
+                            S.shieldD = true;
+                            addMsg("银河电灯展开了缓冲页。", "sys");
+                            return setTimeout(step, 700);
+                        case "link":
+                            if (Math.random() < .2) { S.si++; S.known = null; S._dKnown = null; addMsg("银河电灯点开公告，跳过了一处。", "warn"); if (shellsEmpty()) return speak([T.reloadMsg], loadShells); return setTimeout(step, 700); }
+                            S._dKnown = S.shells[S.si];
+                            addMsg("银河电灯看了更新公告。", "sys");
+                            return setTimeout(step, 700);
+                    }
+                }
+
+                // 决策检查
+                dShoot();
+            };
+
+            const dShoot = () => {
+                if (shellsEmpty()) { speak([T.reloadMsg], loadShells); return; }
+                const live = S.shells[S.si++];
+                let dmg = S.charged ? 2 : 1;
+                S.charged = false;
+                // 判断目标：简单策略，如果知道下一处，则根据知道的结果选择；否则随机
+                let target;
+                const known = S._dKnown;
+                S._dKnown = null;
+                if (known !== undefined && known !== null) {
+                    target = known ? "p" : "d";
+                } else {
+                    // 随机策略
+                    target = Math.random() < 0.5 ? "p" : "d";
+                }
+                shake();
+
+                if (target === "p") {
+                    if (live) {
+                        if (S.shieldP) { S.shieldP = false; addMsg("🪞 缓冲页吸收了伤害", "sys"); }
+                        else { S.pHP -= dmg; addMsg(T.dShoot(false, true, dmg), "bad"); }
+                    } else addMsg(T.dShoot(false, false), "sys");
+                } else {
+                    if (live) {
+                        if (S.shieldD) { S.shieldD = false; addMsg("银河电灯：缓冲。", "sys"); }
+                        else { S.dHP -= dmg; addMsg(T.dShoot(true, true, dmg), "good"); }
+                    } else addMsg(T.dShoot(true, false), "sys");
+                }
+
+                renderHUD();
+                if (S.pHP <= 0 || S.dHP <= 0) return checkDead();
+                if (shellsEmpty()) { S.turn = "p"; return speak([T.reloadMsg], loadShells); }
+                // 检查自己的WIG是刻意为之 → 继续本回合（与玩家规则对称）
+                if (target === "d" && !live) return setTimeout(step, 700);
+                endD();
+            };
+
+            const endD = () => {
+                if (S.over) return;
+                if (S.pHP <= 0) return checkDead();
+                S.turn = "p";
+                renderHUD();
+                // 检查玩家是否被禁言（电脑用的mute）
+                if (S._cuffP) {
+                    S._cuffP = false;
+                    addMsg("您被禁言，跳过回合。", "warn");
+                    S.turn = "d";
+                    renderHUD();
+                    setTimeout(dealerTurn, 600);
+                    return;
+                }
+                if (shellsEmpty()) speak([T.reloadMsg], loadShells);
+                else unlockUI();
+            };
+
+            S._dKnown = null;
+            setTimeout(step, 800);
+        }
+
+        /* ═══════════════ 启动 ═══════════════ */
+        $("bSelf").onclick = () => shoot("p");
+        $("bFish").onclick = () => shoot("d");
+        $("restart").onclick = () => location.reload();
+
+        // 浏览器自动播放限制：首次交互后正式启动音乐
+        document.addEventListener("pointerdown", unlockAudio);
+        document.addEventListener("keydown", unlockAudio);
+
+        document.addEventListener("click", e => {
+            if (e.target.closest && e.target.closest("#items")) return;
+            if (selectedItem !== -1) {
+                selectedItem = -1;
+                hideItemTip();
+                renderItems();
+            }
+        });
+
+        addMsg("—— 银河轮盘 ——", "warn");
+        renderHUD();
+        speak(T.intro(), () => newStage());
+    </script>
+</body>
+</html>
