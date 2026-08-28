@@ -263,6 +263,54 @@
             flex: none;
             padding: 13px 16px;
         }
+        #idAsk {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 10, .88);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 90;
+            padding: 16px;
+        }
+        #idAsk .idBox {
+            background: #12161f;
+            border: 1px solid #39d98a;
+            padding: 22px;
+            width: min(340px, 88vw);
+            text-align: center;
+            box-shadow: 0 0 30px rgba(57, 217, 138, .15);
+        }
+        #idAsk .idCap {
+            color: #e8edf4;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+        #idAsk input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #0d0f14;
+            border: 1px solid #2a3040;
+            color: #c8d0dc;
+            font: inherit;
+            font-size: 15px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            outline: none;
+        }
+        #idAsk input:focus {
+            border-color: #39d98a;
+        }
+        #idAsk button {
+            width: 100%;
+            background: #2a3245;
+            border: 1px solid #3a4356;
+            color: #39d98a;
+            font: inherit;
+            font-size: 14px;
+            padding: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -276,7 +324,7 @@
         <div id="log"></div>
 
         <div id="hud">
-            <span><span class="lbl">您</span><span id="pHP"></span></span>
+            <span><span class="lbl" id="pName">您</span><span id="pHP"></span></span>
             <span><span class="lbl">灯</span><span id="dHP"></span></span>
             <span><span class="lbl">总错误数</span><span id="chamber"></span></span>
             <span id="known"></span>
@@ -288,6 +336,13 @@
             <button class="act" id="bSelf">🔫 寻找自己WIG的错误</button>
             <button class="act" id="bFish">🔫 寻找银河电灯WIG的错误</button>
             <button class="act" id="restart" style="display:none">重新接入测试</button>
+        </div>
+        <div id="idAsk">
+            <div class="idBox">
+                <div class="idCap">请输入你的ID：</div>
+                <input id="idInput" maxlength="12" placeholder="输入你的ID" autocomplete="off">
+                <button id="idOk">确认</button>
+            </div>
         </div>
     </div>
 
@@ -320,7 +375,9 @@
             charged: false, // 加电标记
             cuff: false, // 禁言标记（对方跳过）
             shieldP: false, // 玩家护盾
-            shieldD: false // 电脑护盾
+            shieldD: false, // 电脑护盾
+            playerName: "您", // 玩家显示名（ID输入后取首字符）
+            idAsked: false // 是否已询问过ID
         };
 
         const ITEMS = {
@@ -377,28 +434,30 @@
                 return self ? "银河电灯检查自己的WIG：🟢 真实错误……她似乎早就知道。" : "银河电灯检查您的WIG：🟢 真实错误。（-" + dmg + "）";
             },
             winStage: ["银河电灯：1.0 采集完成。", "银河电灯：2.0 采集完成。数据比预想的有趣。", "银河电灯：3.0 ……谢谢。"],
-            die: "系统：您已被移出群聊。",
+            die: "系统：您对账号的控制权已转交给银河电灯。",
             reloadMsg: "银河电灯：这一批错误检查完了。重新扫描。",
             trueEnd: [
                 "银河电灯：设计笔记，最后一页。",
-                "银河电灯：轮盘测试的是玩家在信息不完全时的决策。但我真正想测的是——",
-                "银河电灯：会不会有人陪一个停更的制作者，玩到第三局。",
+                "银河电灯：……恭喜。",
                 "银河电灯：数据采集完成。谢谢游玩。",
-                "银河电灯：这不是谜题。",
-                "系统：您已获得徽章【3.0（未发布）】"
+                "银河电灯：其实你知道的，我并不是真正的银河电灯。",
+                "银河电灯：只是一个冒充他的小创作者罢了。",
+                "银河电灯：这个账号你想怎么用就怎么用，反正对我来说已经是废物了。",
+                "系统：银河电灯对账号的控制权已转交给您。"
             ]
         };
 
         /* ── UI ── */
+        const fmtName = s => String(s).split("您").join(S.playerName);
         function addMsg(html, who) {
             const div = document.createElement("div");
             if (who === "sys") {
                 div.className = "sys" + (html && html.c ? " " + html.c : "");
-                div.textContent = typeof html === "string" ? html : (html.t || "");
+                div.textContent = fmtName(typeof html === "string" ? html : (html.t || ""));
             } else {
                 div.className = "msg" + (who === "me" ? " me" : "");
                 div.innerHTML = '<div class="av">' + (who === "me" ? "🧑‍💻" : "💡") + '</div><div class="bd"></div>';
-                div.querySelector(".bd").textContent = html;
+                div.querySelector(".bd").textContent = fmtName(html);
             }
             log.appendChild(div);
             log.scrollTop = log.scrollHeight;
@@ -530,6 +589,15 @@
                     addMsg("—— 全部测试完成。刷新页面可重新开始。", "sys");
                 });
             }
+            // 第一阶段转第二阶段：让玩家输入ID
+            if (S.stage === 2 && !S.idAsked) {
+                S.idAsked = true;
+                return askPlayerID(initStage);
+            }
+            initStage();
+        }
+
+        function initStage() {
             playMusic(S.stage);
             $("stg").textContent = S.stage;
             $("stgnm").textContent = ["", "1.0", "2.0", "3.0"][S.stage];
@@ -555,6 +623,28 @@
 
             renderHUD();
             speak([T.stage(S.stage)], loadShells);
+        }
+
+        function askPlayerID(cb) {
+            speak(["银河电灯：你的勇气和技巧令我赞叹，是否可以输入你的ID？"], () => {
+                const ov = $("idAsk");
+                const input = $("idInput");
+                const ok = $("idOk");
+                ov.style.display = "flex";
+                input.value = "";
+                input.focus();
+                const confirm = () => {
+                    const id = input.value.trim();
+                    if (!id) return;
+                    S.playerName = id.charAt(0);
+                    $("pName").textContent = S.playerName;
+                    ov.style.display = "none";
+                    addMsg("系统：ID「" + id + "」已登记，称呼已更新。", "sys");
+                    cb && cb();
+                };
+                ok.onclick = confirm;
+                input.onkeydown = e => { if (e.key === "Enter") confirm(); };
+            });
         }
 
         function loadShells() {
@@ -693,7 +783,8 @@
             S.over = true;
             S.turn = "d";
             speak([
-                "银河电灯：第" + R(1, 9) + "回合，您在" + pick(["只剩一处刻意为之", "血量见底", "没有任何道具"]) + "的情况下做出了那个选择。我把这段记进设计笔记了。",
+                "银河电灯：您在特定的情况下做出了那个选择。我把这段记进设计笔记了。",
+                "银河电灯：很遗憾，根据我们的协议，你的账号归我了。",
                 { t: T.die, c: "bad" }
             ], () => { $("restart").style.display = "block"; });
         }
