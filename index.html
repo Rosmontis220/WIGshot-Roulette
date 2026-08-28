@@ -356,6 +356,12 @@
             padding: 12px;
             cursor: pointer;
         }
+        .donly { display: inline; }
+        .monly { display: none; }
+        @media (max-width: 768px) {
+            .donly { display: none; }
+            .monly { display: inline; }
+        }
     </style>
 </head>
 <body>
@@ -378,8 +384,8 @@
         <div id="items"></div>
         <div id="itemTip"></div>
         <div id="acts">
-            <button class="act" id="bSelf">🤔 寻找自己WIG的错误</button>
-            <button class="act" id="bFish">🤔 寻找银河电灯WIG的错误</button>
+            <button class="act" id="bSelf"><span class="donly">👈我寻思我的WIG有错误</span><span class="monly">🤔 寻找自己WIG的错误</span></button>
+            <button class="act" id="bFish"><span class="donly">肯定是银河电灯的WIG有错误👉</span><span class="monly">🤔 寻找银河电灯WIG的错误</span></button>
             <button class="act" id="restart" style="display:none">重新接入测试</button>
         </div>
         <div id="idAsk">
