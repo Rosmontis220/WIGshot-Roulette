@@ -431,7 +431,7 @@
             },
             dShoot: (self, live, dmg) => {
                 if (!live) return self ? "银河电灯检查自己的WIG：⚪ 刻意为之。" : "银河电灯检查您的WIG：⚪ 刻意为之。";
-                return self ? "银河电灯检查自己的WIG：🟢 真实错误……她似乎早就知道。" : "银河电灯检查您的WIG：🟢 真实错误。（-" + dmg + "）";
+                return self ? "银河电灯检查自己的WIG：🟢 真实错误……他似乎早就知道。" : "银河电灯检查您的WIG：🟢 真实错误。（-" + dmg + "）";
             },
             winStage: ["银河电灯：1.0 采集完成。", "银河电灯：2.0 采集完成。数据比预想的有趣。", "银河电灯：3.0 ……谢谢。"],
             die: "系统：您对账号的控制权已转交给银河电灯。",
@@ -811,7 +811,7 @@
                         case "lens":
                             // 电脑预知：只写内部变量，不泄露给玩家
                             S._dKnown = S.shells[S.si];
-                            addMsg("银河电灯使用了🔎。她知道了什么。", "warn");
+                            addMsg("银河电灯使用了🔎。他知道了什么。", "warn");
                             return setTimeout(step, 700);
                         case "cookie":
                             if (S.dHP < S.dMax) { S.dHP++; addMsg("银河电灯使用了🍪。", "sys"); }
