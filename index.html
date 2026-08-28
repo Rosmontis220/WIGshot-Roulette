@@ -586,7 +586,7 @@
             S.pItems.forEach((k, i) => {
                 if (!k) return;
                 const b = document.createElement("div");
-                const banned = S.stage === 3 && S.pHP <= 1 && isHealItem(k);
+                const banned = (S.stage === 3 && S.pHP <= 1 && isHealItem(k)) || (k === "mute" && S.cuff) || (k === "buf" && S.shieldP);
                 b.className = "it" + (S.turn === "p" && !S.busy ? "" : " used") + (selectedItem === i ? " sel" : "") + (banned ? " banned" : "");
                 b.textContent = ITEMS[k].e;
                 b.title = ITEMS[k].n + "：" + ITEMS[k].d;
@@ -745,6 +745,14 @@
                 addMsg("三阶段血量见底，回血道具被禁用。", "warn");
                 return;
             }
+            if (k === "mute" && S.cuff) {
+                addMsg("📵 对方已被禁言，无法重复使用。", "warn");
+                return;
+            }
+            if (k === "buf" && S.shieldP) {
+                addMsg("🪞 您已有缓冲页，无法重复使用。", "warn");
+                return;
+            }
             S.pItems[i] = null;
             switch (k) {
                 case "lens":
@@ -862,6 +870,14 @@
                     S.dItems.splice(idx, 1);
                     if (S.stage === 3 && S.dHP <= 1 && isHealItem(k)) {
                         addMsg("三阶段血量见底，银河电灯的" + ITEMS[k].n + "失效了。", "warn");
+                        return setTimeout(step, 700);
+                    }
+                    if (k === "mute" && S._cuffP) {
+                        addMsg("📵 银河电灯想再禁言，但您已被禁言，道具浪费了。", "warn");
+                        return setTimeout(step, 700);
+                    }
+                    if (k === "buf" && S.shieldD) {
+                        addMsg("🪞 银河电灯已有缓冲页，重复展开失败。", "warn");
                         return setTimeout(step, 700);
                     }
                     switch (k) {
